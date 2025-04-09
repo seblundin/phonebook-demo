@@ -1,10 +1,14 @@
 package com.example.phonebook_api.controllers;
 
 import com.example.phonebook_api.dtos.CreatePhonebookEntryDto;
+import com.example.phonebook_api.dtos.PagedResponse;
 import com.example.phonebook_api.dtos.PhonebookEntryDto;
 import com.example.phonebook_api.entities.PhonebookEntry;
 import com.example.phonebook_api.repositories.PhonebookEntryRepository;
 import jakarta.validation.Valid;
+
+import java.util.List;
+
 import org.springframework.data.domain.*;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
@@ -22,7 +26,7 @@ public class PhonebookEntryController {
 
   // Get entries with optional filters
   @GetMapping
-  public Page<PhonebookEntryDto> getAllEntries(
+  public ResponseEntity<PagedResponse<PhonebookEntryDto>> getAllEntries(
       @RequestParam(required = false) String name,
       @RequestParam(required = false) String phoneNumber,
       @PageableDefault(size = 10, sort = "name") Pageable pageable) {
@@ -37,8 +41,16 @@ public class PhonebookEntryController {
       page = repository.findAll(pageable);
     }
 
-    return page.map(entry -> new PhonebookEntryDto(
-        entry.getId(), entry.getName(), entry.getPhoneNumber()));
+    List<PhonebookEntryDto> dtos = page.getContent().stream()
+        .map(entry -> new PhonebookEntryDto(entry.getId(), entry.getName(), entry.getPhoneNumber()))
+        .toList();
+
+    return ResponseEntity.ok(new PagedResponse<>(
+        dtos,
+        page.getNumber(),
+        page.getSize(),
+        page.getTotalElements(),
+        page.getTotalPages()));
   }
 
   // Get one entry

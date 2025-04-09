@@ -35,3 +35,7 @@ out/
 
 ### VS Code ###
 .vscode/
+
+# Ignore env-specific configs with secrets
+/src/main/resources/application-*.properties
+!src/main/resources/application.properties
