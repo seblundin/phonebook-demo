@@ -1,36 +1,42 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import type { PhonebookEntry } from "../types";
+import { PhonebookEntriesResponse } from "../types/PhonebookEntriesResponse";
 
 const baseUrl = import.meta.env.VITE_API_URL!;
 
 export const phonebookApi = createApi({
   reducerPath: "phonebookApi",
   baseQuery: fetchBaseQuery({ baseUrl }),
-  tagTypes: ["PhonebookEntry"],
+  tagTypes: ["PhonebookEntries"],
   refetchOnFocus: true,
   endpoints: (builder) => ({
-    getEntries: builder.query<PhonebookEntry[], void>({
-      query: () => "/",
-      providesTags: (result) =>
-        result
-          ? [
-              ...result.map(({ id }) => ({
-                type: "PhonebookEntry" as const,
-                id,
-              })),
-              { type: "PhonebookEntry", id: "LIST" },
-            ]
-          : [{ type: "PhonebookEntry", id: "LIST" }],
+    getEntries: builder.query<
+      PhonebookEntriesResponse,
+      { page: number; size: number }
+    >({
+      query: ({ page, size }) => `/api/phonebook?page=${page}&size=${size}`,
+      providesTags: () => ["PhonebookEntries"],
     }),
-    addEntry: builder.mutation<PhonebookEntry, PhonebookEntry>({
+    addEntry: builder.mutation<PhonebookEntry, Partial<PhonebookEntry>>({
       query: (newEntry) => ({
-        url: "/",
+        url: "/api/phonebook",
         method: "POST",
         body: newEntry,
       }),
-      invalidatesTags: [{ type: "PhonebookEntry", id: "LIST" }],
+      invalidatesTags: ["PhonebookEntries"],
+    }),
+    deleteEntry: builder.mutation<void, string>({
+      query: (id) => ({
+        url: `/api/phonebook/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: () => ["PhonebookEntries"],
     }),
   }),
 });
 
-export const { useLazyGetEntriesQuery } = phonebookApi;
+export const {
+  useLazyGetEntriesQuery,
+  useAddEntryMutation,
+  useDeleteEntryMutation,
+} = phonebookApi;
